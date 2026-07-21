@@ -1,0 +1,4 @@
+interface:
+  display_name: "CafeCode Image Generator"
+  short_description: "Generate and save images through CafeCode API"
+  default_prompt: "Use $cafecode-imagegen to generate an image from this prompt and save it as a PNG."
