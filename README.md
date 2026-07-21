@@ -35,9 +35,12 @@ Add your key as a top-level field in `~/.codex/config.toml`:
 
 ```toml
 cafecode-imagegen-key = "your-key"
+cafecode-imagegen-output-dir = "~/Pictures/CafeCode"
 ```
 
 The script also supports `CAFECODE_IMAGE_API_KEY` as an environment-variable fallback. Do not commit credentials to this repository.
+
+The output-directory setting accepts an absolute path, a `~` path, or a path relative to the current working directory. Override it for one request with `--output-dir`, or use `--out` to specify the complete file path.
 
 ## Use With Codex
 
@@ -79,6 +82,16 @@ python scripts/generate_image.py `
   --out .\image-output\custom-name.png
 ```
 
+Override only the output directory:
+
+```powershell
+python scripts/generate_image.py `
+  --prompt-file .\prompt.txt `
+  --output-dir .\my-images
+```
+
+Output precedence is `--out`, then `--output-dir`, then `cafecode-imagegen-output-dir`, and finally `image-output`.
+
 Generate with reference images:
 
 ```powershell
@@ -116,6 +129,7 @@ npx skills add cafecodework/cafecode-imagegen --skill cafecode-imagegen -g -a co
 
 ```toml
 cafecode-imagegen-key = "你的密钥"
+cafecode-imagegen-output-dir = "~/Pictures/CafeCode"
 ```
 
-省略 `--out` 时，图片默认保存在 `image-output/image.png`。
+输出路径优先级为 `--out`、`--output-dir`、配置项 `cafecode-imagegen-output-dir`，最后回退到 `image-output/image.png`。

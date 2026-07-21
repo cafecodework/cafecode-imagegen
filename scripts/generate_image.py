@@ -31,12 +31,13 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--prompt", help="Exact prompt text to send")
     source.add_argument("--prompt-file", type=Path, help="UTF-8 file containing the exact prompt")
     source.add_argument("--request-file", type=Path, help="UTF-8 JSON request body")
-    parser.add_argument(
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument(
         "--out",
         type=Path,
-        default=Path("image-output/image.png"),
-        help="Output image path (default: image-output/image.png)",
+        help="Complete output image path; overrides the configured output directory",
     )
+    output.add_argument("--output-dir", type=Path, help="Output directory; the file name defaults to image.<format>")
     parser.add_argument("--endpoint", help="Override the endpoint; references use /v1/images/edits by default")
     parser.add_argument("--model", default="gpt-image-2")
     parser.add_argument("--size", default="1024x1024")
@@ -46,6 +47,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reference", action="append", default=[], type=Path, help="Reference image path; repeatable")
     parser.add_argument("--config-file", type=Path, help="TOML config path; defaults to ~/.codex/config.toml")
     parser.add_argument("--config-key", default="cafecode-imagegen-key", help="Top-level TOML field containing the API key")
+    parser.add_argument(
+        "--output-dir-config-key",
+        default="cafecode-imagegen-output-dir",
+        help="Top-level TOML field containing the default output directory",
+    )
     parser.add_argument("--api-key-env", default="CAFECODE_IMAGE_API_KEY")
     parser.add_argument("--header", action="append", default=[], metavar="NAME=VALUE", help="Additional request header; repeatable")
     parser.add_argument("--timeout", type=float, default=180.0)
@@ -153,21 +159,52 @@ def parse_headers(values: list[str]) -> dict[str, str]:
     return result
 
 
-def load_api_key(args: argparse.Namespace) -> str | None:
-    config_path = args.config_file or (Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")) / "config.toml")
+def config_path_for(args: argparse.Namespace) -> Path:
+    return args.config_file or (Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")) / "config.toml")
+
+
+def load_config(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
+    config_path = config_path_for(args).expanduser()
     if config_path.exists():
         with config_path.open("rb") as handle:
             config = tomllib.load(handle)
-        value = config.get(args.config_key)
-        if value is not None:
-            if not isinstance(value, str) or not value.strip():
-                raise ValueError(f"{args.config_key} in {config_path} must be a non-empty string")
-            return value.strip()
+        if not isinstance(config, dict):
+            raise ValueError(f"config file must contain a TOML table: {config_path}")
+        return config_path, config
+    return config_path, {}
+
+
+def load_api_key(args: argparse.Namespace, config: dict[str, Any], config_path: Path) -> str | None:
+    value = config.get(args.config_key)
+    if value is not None:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{args.config_key} in {config_path} must be a non-empty string")
+        return value.strip()
     if args.api_key_env:
         value = os.environ.get(args.api_key_env)
         if value:
             return value
     return None
+
+
+def resolve_output_path(args: argparse.Namespace, body: dict[str, Any], config: dict[str, Any], config_path: Path) -> Path:
+    if args.out is not None:
+        return args.out.expanduser()
+
+    if args.output_dir is not None:
+        output_dir = args.output_dir.expanduser()
+    else:
+        configured = config.get(args.output_dir_config_key)
+        if configured is None:
+            output_dir = Path("image-output")
+        elif not isinstance(configured, str) or not configured.strip():
+            raise ValueError(f"{args.output_dir_config_key} in {config_path} must be a non-empty string")
+        else:
+            output_dir = Path(configured.strip()).expanduser()
+
+    output_format = str(body.get("output_format", args.output_format)).lower()
+    extension = output_format if output_format in {"png", "jpeg", "webp"} else args.output_format
+    return output_dir / f"image.{extension}"
 
 
 def response_error(exc: Exception) -> tuple[bool, str]:
@@ -258,16 +295,27 @@ def main() -> int:
         endpoint = args.endpoint or (DEFAULT_EDIT_ENDPOINT if body.get("images") else DEFAULT_ENDPOINT)
         validate_endpoint(endpoint, args.allow_http)
         headers = parse_headers(args.header)
+        config_path, config = load_config(args)
+        output_path = resolve_output_path(args, body, config, config_path)
 
         if args.dry_run:
-            print(json.dumps({"endpoint": endpoint, "request": request_for_display(body)}, ensure_ascii=False, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "endpoint": endpoint,
+                        "output": str(output_path.resolve()),
+                        "request": request_for_display(body),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
             return 0
 
-        api_key = load_api_key(args)
+        api_key = load_api_key(args, config, config_path)
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
         elif endpoint in {DEFAULT_ENDPOINT, DEFAULT_EDIT_ENDPOINT}:
-            config_path = args.config_file or (Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")) / "config.toml")
             raise RuntimeError(f"missing API key: add {args.config_key} to {config_path}")
 
         response = post_json(endpoint, body, headers, args.timeout, args.retries, args.retry_delay)
@@ -278,7 +326,7 @@ def main() -> int:
             content = fetch_url(value, args.timeout) if kind == "url" else value
             if not content:
                 raise RuntimeError("response image is empty")
-            target = args.out if not args.save_all else suffix_path(args.out, index + 1)
+            target = output_path if not args.save_all else suffix_path(output_path, index + 1)
             atomic_write(target, content)
             outputs.append(str(target.resolve()))
         print(json.dumps({"ok": True, "outputs": outputs, "count": len(outputs)}, ensure_ascii=False))

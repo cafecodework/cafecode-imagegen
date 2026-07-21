@@ -12,6 +12,7 @@ Use the bundled `scripts/generate_image.py` script for image generation through 
 - Default endpoint: `https://neko.cafecode.work/v1/images/generations`
 - Reference-image endpoint: `https://neko.cafecode.work/v1/images/edits`, selected automatically when `--reference` is present.
 - Authentication: add the top-level field `cafecode-imagegen-key` to `~/.codex/config.toml`; the script sends it as `Authorization: Bearer ...`. `CAFECODE_IMAGE_API_KEY` remains an environment fallback. Do not use `OPENAI_API_KEY` implicitly because this endpoint is third-party.
+- Output directory: optionally set the top-level field `cafecode-imagegen-output-dir` in `~/.codex/config.toml`. Use an absolute path, a `~` path, or a path relative to the current working directory.
 - The endpoint may be overridden with `--endpoint`.
 - HTTPS is required by default. Use `--allow-http` only for a deliberately local test server.
 
@@ -50,7 +51,7 @@ Ground generation with one or more images:
 
 Each reference is sent as `images[].image_url` using a local data URL. Dry-run output redacts the base64 bytes.
 
-If `--out` is omitted, save the first image as `image-output/image.png`; with `--all`, additional images use names such as `image-output/image-1.png`. Pass an explicit `--out` path to choose another location.
+Output precedence is `--out`, then `--output-dir`, then `cafecode-imagegen-output-dir`, then the built-in `image-output` directory. If `--out` is omitted, use the file name `image.<format>`; with `--all`, additional images use names such as `image-1.png`.
 
 ## Workflow
 
@@ -65,9 +66,10 @@ Expected configuration:
 
 ```toml
 cafecode-imagegen-key = "your-key"
+cafecode-imagegen-output-dir = "~/Pictures/CafeCode"
 ```
 
-Use `--config-file` to read another TOML file or `--config-key` to select another top-level field. The script never prints the key.
+Use `--config-file` to read another TOML file, `--config-key` to select another API-key field, or `--output-dir-config-key` to select another output-directory field. The script never prints the key.
 
 ## Request Behavior
 
