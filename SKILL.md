@@ -79,6 +79,8 @@ With `--prompt` or `--prompt-file`, the script creates a body containing `model`
 - `data[*].url` containing an image URL to download;
 - a top-level `b64_json` or `url` for simple compatible servers.
 
+For URL responses, the script downloads the image with a browser-compatible `User-Agent` and image `Accept` header. CafeCode currently serves generated image URLs through a Cloudflare-protected CDN that rejects Python urllib's default user agent. Do not remove the browser headers, and do not forward the CafeCode API key to the returned third-party image host.
+
 The script retries timeouts, HTTP 408/425/429, and HTTP 5xx responses with bounded exponential backoff. It fails fast on other status codes, malformed JSON, missing image data, invalid base64, or unsupported URL schemes.
 
 ## Sprite Generation Notes

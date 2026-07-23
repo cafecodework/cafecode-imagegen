@@ -23,6 +23,12 @@ from urllib.request import Request, urlopen
 DEFAULT_ENDPOINT = "https://neko.cafecode.work/v1/images/generations"
 DEFAULT_EDIT_ENDPOINT = "https://neko.cafecode.work/v1/images/edits"
 RETRY_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/138.0.0.0 Safari/537.36"
+)
+IMAGE_ACCEPT = "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
 
 
 def parse_args() -> argparse.Namespace:
@@ -260,7 +266,16 @@ def fetch_url(url: str, timeout: float) -> bytes:
     parsed = urlparse(url)
     if parsed.scheme != "https":
         raise RuntimeError("image URLs in API responses must use https://")
-    request = Request(url, headers={"Accept": "image/*"})
+    # CafeCode image URLs are served through a Cloudflare-protected CDN.
+    # The CDN rejects urllib's default Python-urllib user agent even though
+    # the generation request itself has already authenticated successfully.
+    request = Request(
+        url,
+        headers={
+            "Accept": IMAGE_ACCEPT,
+            "User-Agent": BROWSER_USER_AGENT,
+        },
+    )
     with urlopen(request, timeout=timeout) as response:
         return response.read()
 

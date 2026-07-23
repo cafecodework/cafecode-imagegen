@@ -7,6 +7,7 @@ A Codex skill for generating and reference-editing images through the CafeCode A
 - Generate images from an exact prompt or JSON request.
 - Edit or ground generation with one or more reference images.
 - Decode `b64_json` responses or download HTTPS image URLs.
+- Download URL responses with browser-compatible headers for CafeCode's Cloudflare-protected image CDN.
 - Retry transient timeouts, rate limits, and server errors.
 - Keep API keys out of prompts, scripts, and command history.
 - Save atomically to `image-output/image.png` by default.
@@ -116,6 +117,8 @@ python scripts/generate_image.py `
 - Reference editing: `https://neko.cafecode.work/v1/images/edits`
 
 The edit endpoint is selected automatically when `--reference` is used. Override either endpoint with `--endpoint` when needed.
+
+When the API returns `data[].url`, the script uses a browser-compatible User-Agent for the image download. This avoids Cloudflare rejecting Python urllib's default User-Agent. The API Authorization header is intentionally not forwarded to the returned image host.
 
 ## 中文速览
 
