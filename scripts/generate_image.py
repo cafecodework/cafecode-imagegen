@@ -20,8 +20,8 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
-DEFAULT_ENDPOINT = "https://neko.cafecode.work/v1/images/generations"
-DEFAULT_EDIT_ENDPOINT = "https://neko.cafecode.work/v1/images/edits"
+DEFAULT_ENDPOINT = "https://nl.cafeshop.ai/v1/images/generations"
+DEFAULT_EDIT_ENDPOINT = "https://nl.cafeshop.ai/v1/images/edits"
 RETRY_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 BROWSER_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

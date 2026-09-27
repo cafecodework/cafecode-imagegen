@@ -5,12 +5,14 @@ description: Generate or reference-edit raster images through OpenAI-compatible 
 
 # CafeCode Imagegen
 
-Use the bundled `scripts/generate_image.py` script for image generation through the Neko-compatible endpoint. The script keeps the prompt unchanged, supports either a prompt file or a complete request JSON, writes images atomically, and never prints authentication headers.
+Use the bundled `scripts/generate_image.py` script for image generation through CafeCode's OpenAI-compatible NL API. The script keeps the prompt unchanged, supports either a prompt file or a complete request JSON, writes images atomically, and never prints authentication headers.
 
 ## Configuration
 
-- Default endpoint: `https://neko.cafecode.work/v1/images/generations`
-- Reference-image endpoint: `https://neko.cafecode.work/v1/images/edits`, selected automatically when `--reference` is present.
+- API base URL: `https://nl.cafeshop.ai`; default model: `gpt-image-2`.
+- Default endpoint: `https://nl.cafeshop.ai/v1/images/generations`
+- Reference-image endpoint: `https://nl.cafeshop.ai/v1/images/edits`, selected automatically when `--reference` is present.
+- Browser-based image tool: [Macaron](https://macaron.cafeshop.ai). This is the web UI, not the API endpoint for this script.
 - Authentication: add the top-level field `cafecode-imagegen-key` to `~/.codex/config.toml`; the script sends it as `Authorization: Bearer ...`. `CAFECODE_IMAGE_API_KEY` remains an environment fallback. Do not use `OPENAI_API_KEY` implicitly because this endpoint is third-party.
 - Output directory: optionally set the top-level field `cafecode-imagegen-output-dir` in `~/.codex/config.toml`. Use an absolute path, a `~` path, or a path relative to the current working directory.
 - The endpoint may be overridden with `--endpoint`.

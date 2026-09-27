@@ -113,16 +113,28 @@ python scripts/generate_image.py `
 
 ## Endpoints
 
-- Generation: `https://neko.cafecode.work/v1/images/generations`
-- Reference editing: `https://neko.cafecode.work/v1/images/edits`
+- API base URL: `https://nl.cafeshop.ai`
+- Generation: `https://nl.cafeshop.ai/v1/images/generations`
+- Reference editing: `https://nl.cafeshop.ai/v1/images/edits`
+- Default model: `gpt-image-2`
+
+The browser-based image tool is [Macaron](https://macaron.cafeshop.ai). Use the NL API URLs above for this skill, not the Macaron web UI address.
 
 The edit endpoint is selected automatically when `--reference` is used. Override either endpoint with `--endpoint` when needed.
+
+Existing installations must be updated to use the new defaults. Run the installation command again; if your own commands include `--endpoint`, update that explicit URL as well.
 
 When the API returns `data[].url`, the script uses a browser-compatible User-Agent for the image download. This avoids Cloudflare rejecting Python urllib's default User-Agent. The API Authorization header is intentionally not forwarded to the returned image host.
 
 ## 中文速览
 
-安装：
+- API 基础地址：`https://nl.cafeshop.ai`
+- 文生图端点：`https://nl.cafeshop.ai/v1/images/generations`
+- 参考图编辑端点：`https://nl.cafeshop.ai/v1/images/edits`
+- 默认模型：`gpt-image-2`
+- 网页生图工具：[Macaron](https://macaron.cafeshop.ai)，不要将工具网页地址作为 skill 的 API 端点。
+
+安装或更新已有 skill（若自行设置过 `--endpoint`，也需要修改该参数中的旧地址）：
 
 ```powershell
 npx skills add cafecodework/cafecode-imagegen --skill cafecode-imagegen -g -a codex -y
